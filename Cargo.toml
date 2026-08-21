@@ -23,6 +23,7 @@ esp-radio = { version = "0.18.0", features = [
   "esp32",
   "unstable",
   "wifi",
+  "esp-now"
 ] }
 smoltcp = { version = "0.13.0", default-features = false, features = [
   "medium-ethernet",
@@ -44,8 +45,14 @@ smoltcp = { version = "0.13.0", default-features = false, features = [
 # Always build with some optimizations enabled.
 opt-level = "s"
 
+# https://docs.espressif.com/projects/rust/esp-radio/0.16.0/esp32/esp_radio/index.html :
+#   It is necessary to build with optimization level 2 or 3 since otherwise, it might not even be able to connect or advertise.
+[profile.dev.package.esp-radio]
+opt-level = 3
+
 [profile.release]
 codegen-units = 1     # LLVM can perform better optimizations using a single thread
 debug         = 2     # prefer slower builds but better debugging experience
 lto           = 'fat'
 opt-level     = 's'
+

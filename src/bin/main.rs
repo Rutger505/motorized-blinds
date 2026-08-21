@@ -41,13 +41,20 @@ fn main() -> ! {
     let sw_interrupt =
         esp_hal::interrupt::software::SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
     esp_rtos::start(timg0.timer0, sw_interrupt.software_interrupt0);
-    let (mut _wifi_controller, _interfaces) =
-        esp_radio::wifi::new(peripherals.WIFI, Default::default())
-            .expect("Failed to initialize Wi-Fi controller");
 
-    loop {
-        let delay_start = Instant::now();
-        while delay_start.elapsed() < Duration::from_millis(500) {}
+    let wifi = peripherals.WIFI;
+    let (controller, interfaces) = esp_radio::wifi::new(wifi, Default::default()).unwrap();
+
+    let mut esp_now = interfaces.esp_now();
+    esp_now.set_channel(11).unwrap();
+
+    // let (mut _wifi_controller, _interfaces) =
+    //     esp_radio::wifi::new(peripherals.WIFI, Default::default())
+    //         .expect("Failed to initialize Wi-Fi controller");
+
+    // loop {
+    //     let delay_start = Instant::now();
+    //     while delay_start.elapsed() < Duration::from_millis(500) {}
     }
 
     // for inspiration have a look at the examples at https://github.com/esp-rs/esp-hal/tree/esp-hal-v1.1.0/examples
