@@ -1933,9 +1933,14 @@ dependencies = [
  "defmt 1.1.1",
  "defmt-rtt",
  "embassy-executor",
+ "embassy-futures",
  "embassy-nrf",
+ "embassy-sync 0.8.0",
  "embassy-time",
+ "heapless 0.9.3",
  "panic-probe",
+ "protocol",
+ "static_cell",
 ]
 
 [[package]]

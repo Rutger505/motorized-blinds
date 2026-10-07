@@ -14,6 +14,10 @@ test = false
 test = false
 
 [dependencies]
+heapless = "0.9.3"
+protocol = { workspace = true }
+
+[target.'cfg(target_os = "none")'.dependencies]
 cortex-m = { version = "0.7.7", features = [
   "critical-section-single-core",
   "inline-asm",
@@ -25,12 +29,20 @@ embassy-executor = { workspace = true, features = [
   "executor-thread",
   "platform-cortex-m",
 ] }
+embassy-futures = { workspace = true }
 embassy-nrf = { version = "0.11.0", features = [
   "defmt",
   "gpiote",
   "nrf52840",
   "time",
   "time-driver-rtc1",
+  "unstable-pac",
 ] }
+embassy-sync = { workspace = true }
 embassy-time = { workspace = true, features = ["defmt-timestamp-uptime"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
+protocol = { workspace = true, features = ["defmt"] }
+static_cell = { workspace = true }
+
+[dev-dependencies]
+embassy-futures = { workspace = true }
