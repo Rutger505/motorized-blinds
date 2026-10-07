@@ -10,3 +10,7 @@ defmt = { workspace = true, optional = true }
 
 [features]
 defmt = ["dep:defmt"]
+
+[dev-dependencies]
+byte       = "0.2.7"
+ieee802154 = "0.6.1"
