@@ -1,0 +1,12 @@
+[package]
+edition.workspace      = true
+license.workspace      = true
+name                   = "protocol"
+rust-version.workspace = true
+version.workspace      = true
+
+[dependencies]
+defmt = { workspace = true, optional = true }
+
+[features]
+defmt = ["dep:defmt"]

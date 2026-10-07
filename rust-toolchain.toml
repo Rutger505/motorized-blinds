@@ -1,0 +1,4 @@
+[toolchain]
+channel    = "stable"
+components = ["clippy", "rust-src", "rustfmt"]
+targets    = ["riscv32imac-unknown-none-elf", "thumbv7em-none-eabihf"]
