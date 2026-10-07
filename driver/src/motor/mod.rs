@@ -29,6 +29,14 @@ pub trait Endstop {
     fn is_pressed(&mut self) -> bool;
 }
 
+#[cfg(target_os = "none")]
+impl Endstop for esp_hal::gpio::Input<'_> {
+    /// The switch pulls the pin to GND, against the internal pull-up.
+    fn is_pressed(&mut self) -> bool {
+        self.is_low()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[cfg_attr(target_os = "none", derive(defmt::Format))]
 pub enum State {

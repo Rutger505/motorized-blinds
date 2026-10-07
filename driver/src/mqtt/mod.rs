@@ -9,7 +9,7 @@ use embedded_io_async::{Read, Write};
 use heapless::String;
 use protocol::Command;
 
-pub use client::{Error, MqttClient};
+pub use client::{Buffers, Error, MqttClient};
 use packet::{Connect, Packet, Will};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,17 +87,18 @@ pub fn parse_command(payload: &[u8]) -> Option<Command> {
     }
 }
 
-pub struct HomeAssistant<T> {
-    client: MqttClient<T>,
+pub struct HomeAssistant<'b, T> {
+    client: MqttClient<'b, T>,
     id: u8,
     topics: Topics,
 }
 
-impl<T: Read + Write> HomeAssistant<T> {
+impl<'b, T: Read + Write> HomeAssistant<'b, T> {
     /// Connects, listens for commands and marks the blind as available.
     /// The broker marks it unavailable again when the connection drops.
     pub async fn connect(
         transport: T,
+        buffers: &'b mut Buffers,
         id: u8,
         credentials: &Credentials<'_>,
     ) -> Result<Self, Error<T::Error>> {
@@ -105,7 +106,7 @@ impl<T: Read + Write> HomeAssistant<T> {
         let mut client_id = String::<16>::new();
         write!(client_id, "rolgordijn-{id}").unwrap();
 
-        let mut client = MqttClient::new(transport);
+        let mut client = MqttClient::new(transport, buffers);
         client
             .connect(&Connect {
                 client_id: &client_id,
@@ -330,8 +331,11 @@ mod tests {
         password: None,
     };
 
-    fn connected(broker: &mut FakeBroker) -> HomeAssistant<&mut FakeBroker> {
-        block_on(HomeAssistant::connect(broker, 2, &NO_CREDENTIALS)).unwrap()
+    fn connected<'b>(
+        broker: &'b mut FakeBroker,
+        buffers: &'b mut Buffers,
+    ) -> HomeAssistant<'b, &'b mut FakeBroker> {
+        block_on(HomeAssistant::connect(broker, buffers, 2, &NO_CREDENTIALS)).unwrap()
     }
 
     #[test]
@@ -346,7 +350,7 @@ mod tests {
     #[test]
     fn connect_subscribes_and_goes_online() {
         let mut broker = FakeBroker::replying(&[CONNACK_OK]);
-        connected(&mut broker);
+        connected(&mut broker, &mut Buffers::new());
 
         let mut connect = [0; 128];
         let len = packet::connect(
@@ -378,14 +382,21 @@ mod tests {
     #[test]
     fn refused_connection_is_an_error() {
         let mut broker = FakeBroker::replying(&[&[0x20, 2, 0, 5]]);
-        let result = block_on(HomeAssistant::connect(&mut broker, 1, &NO_CREDENTIALS));
+        let mut buffers = Buffers::new();
+        let result = block_on(HomeAssistant::connect(
+            &mut broker,
+            &mut buffers,
+            1,
+            &NO_CREDENTIALS,
+        ));
         assert!(matches!(result, Err(Error::Refused(5))));
     }
 
     #[test]
     fn closed_connection_is_an_error() {
         let mut broker = FakeBroker::replying(&[CONNACK_OK]);
-        let mut home_assistant = connected(&mut broker);
+        let mut buffers = Buffers::new();
+        let mut home_assistant = connected(&mut broker, &mut buffers);
         assert!(matches!(
             block_on(home_assistant.next_command()),
             Err(Error::Closed)
@@ -403,7 +414,8 @@ mod tests {
             &publish("rolgordijn/2/set", b"CLOSE"),
             &publish("rolgordijn/2/set", b"AANGEPAST"),
         ]);
-        let mut home_assistant = connected(&mut broker);
+        let mut buffers = Buffers::new();
+        let mut home_assistant = connected(&mut broker, &mut buffers);
 
         assert_eq!(
             block_on(home_assistant.next_command()).unwrap(),
@@ -418,7 +430,8 @@ mod tests {
     #[test]
     fn publishes_status_and_battery_retained() {
         let mut broker = FakeBroker::replying(&[CONNACK_OK]);
-        let mut home_assistant = connected(&mut broker);
+        let mut buffers = Buffers::new();
+        let mut home_assistant = connected(&mut broker, &mut buffers);
         block_on(home_assistant.publish(Status {
             state: CoverState::Closing,
             position: 42,
@@ -439,7 +452,8 @@ mod tests {
     #[test]
     fn announce_publishes_valid_discovery_configs() {
         let mut broker = FakeBroker::replying(&[CONNACK_OK]);
-        let mut home_assistant = connected(&mut broker);
+        let mut buffers = Buffers::new();
+        let mut home_assistant = connected(&mut broker, &mut buffers);
         block_on(home_assistant.announce()).unwrap();
 
         let publishes = broker.sent_publishes();

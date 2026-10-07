@@ -26,29 +26,51 @@ impl<E> From<Malformed> for Error<E> {
     }
 }
 
+/// Kept outside the client so they can live in static memory instead of on
+/// the stack.
+pub struct Buffers {
+    rx: [u8; BUFFER_LEN],
+    tx: [u8; BUFFER_LEN],
+}
+
+impl Buffers {
+    pub const fn new() -> Self {
+        Self {
+            rx: [0; BUFFER_LEN],
+            tx: [0; BUFFER_LEN],
+        }
+    }
+}
+
+impl Default for Buffers {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 /// Received bytes are kept in the client between calls, so `receive` can be
 /// cancelled (e.g. by a `select`) without losing part of a packet.
-pub struct MqttClient<T> {
+pub struct MqttClient<'b, T> {
     transport: T,
-    rx: [u8; BUFFER_LEN],
+    rx: &'b mut [u8; BUFFER_LEN],
     rx_len: usize,
-    tx: [u8; BUFFER_LEN],
+    tx: &'b mut [u8; BUFFER_LEN],
     next_packet_id: u16,
 }
 
-impl<T: Read + Write> MqttClient<T> {
-    pub fn new(transport: T) -> Self {
+impl<'b, T: Read + Write> MqttClient<'b, T> {
+    pub fn new(transport: T, buffers: &'b mut Buffers) -> Self {
         Self {
             transport,
-            rx: [0; BUFFER_LEN],
+            rx: &mut buffers.rx,
             rx_len: 0,
-            tx: [0; BUFFER_LEN],
+            tx: &mut buffers.tx,
             next_packet_id: 1,
         }
     }
 
     pub async fn connect(&mut self, options: &Connect<'_>) -> Result<(), Error<T::Error>> {
-        let len = packet::connect(&mut self.tx, options)?;
+        let len = packet::connect(self.tx, options)?;
         self.send(len).await?;
 
         let return_code = self
@@ -69,19 +91,19 @@ impl<T: Read + Write> MqttClient<T> {
         payload: &[u8],
         retain: bool,
     ) -> Result<(), Error<T::Error>> {
-        let len = packet::publish(&mut self.tx, topic, payload, retain)?;
+        let len = packet::publish(self.tx, topic, payload, retain)?;
         self.send(len).await
     }
 
     pub async fn subscribe(&mut self, topic: &str) -> Result<(), Error<T::Error>> {
         let packet_id = self.next_packet_id;
         self.next_packet_id = self.next_packet_id.checked_add(1).unwrap_or(1);
-        let len = packet::subscribe(&mut self.tx, packet_id, topic)?;
+        let len = packet::subscribe(self.tx, packet_id, topic)?;
         self.send(len).await
     }
 
     pub async fn ping(&mut self) -> Result<(), Error<T::Error>> {
-        let len = packet::ping(&mut self.tx)?;
+        let len = packet::ping(self.tx)?;
         self.send(len).await
     }
 

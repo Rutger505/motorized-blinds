@@ -13,5 +13,13 @@ rustflags = ["-C", "force-frame-pointers"]
 [target.thumbv7em-none-eabihf]
 runner = "probe-rs run --chip nRF52840_xxAA"
 
+# Defaults for the driver's build time settings. Variables already set in the
+# environment take precedence, e.g. `BLIND_ID=2 WIFI_SSID=... cargo run-driver`.
 [env]
-DEFMT_LOG = "info"
+BLIND_ID      = "1"
+DEFMT_LOG     = "info"
+MQTT_BROKER   = "192.168.1.2"
+MQTT_PASSWORD = ""
+MQTT_USERNAME = ""
+WIFI_PASSWORD = ""
+WIFI_SSID     = ""
