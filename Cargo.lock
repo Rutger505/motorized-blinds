@@ -476,17 +476,22 @@ dependencies = [
  "critical-section",
  "defmt 1.1.1",
  "embassy-executor",
+ "embassy-futures",
  "embassy-net",
+ "embassy-sync 0.8.0",
  "embassy-time",
- "embedded-io 0.7.1",
  "embedded-io-async 0.7.0",
+ "embedded-storage",
  "embedded-test",
  "esp-alloc",
  "esp-bootloader-esp-idf",
  "esp-hal",
  "esp-radio",
  "esp-rtos",
+ "esp-storage",
+ "heapless 0.9.3",
  "panic-rtt-target",
+ "protocol",
  "rtt-target",
  "smoltcp",
  "static_cell",
@@ -1058,6 +1063,7 @@ checksum = "23fbff98b06a96b6ce3791ecec5c668524052a068e23aacd23afe17ddba844ce"
 dependencies = [
  "allocator-api2",
  "bt-hci",
+ "byte",
  "cfg-if",
  "defmt 1.1.1",
  "docsplay",
@@ -1154,6 +1160,21 @@ dependencies = [
  "portable-atomic",
  "riscv",
  "xtensa-lx",
+]
+
+[[package]]
+name = "esp-storage"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4cf2b3f00c9f94b27c62a4f5296b19470c3a083c687c8146e554a459f9bee596"
+dependencies = [
+ "document-features",
+ "embedded-storage",
+ "esp-hal",
+ "esp-hal-procmacros",
+ "esp-metadata-generated",
+ "esp-rom-sys",
+ "esp-sync",
 ]
 
 [[package]]

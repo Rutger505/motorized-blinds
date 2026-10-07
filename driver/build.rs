@@ -1,4 +1,9 @@
 fn main() {
+    // The linker also runs this binary as its error handling script, without cargo's environment.
+    if std::env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os != "none") {
+        return;
+    }
+
     linker_be_nice();
     println!("cargo:rustc-link-arg-tests=-Tembedded-test.x");
     println!("cargo:rustc-link-arg=-Tdefmt.x");
