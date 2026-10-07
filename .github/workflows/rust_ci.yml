@@ -22,14 +22,20 @@ jobs:
         include:
           - name: Build driver
             run: cargo build-driver --release
+          - name: Build driver with mqtt
+            run: cargo build-driver --release --no-default-features --features mqtt
           - name: Build remote
             run: cargo build-remote --release
           - name: Host tests
             run: cargo test-host
+          - name: Clippy host tests
+            run: cargo clippy --package protocol --package driver --package remote --lib --profile test -- -D warnings
           - name: Format
             run: cargo fmt --all -- --check
           - name: Clippy driver
             run: cargo clippy --package driver --target riscv32imac-unknown-none-elf -- -D warnings
+          - name: Clippy driver with mqtt
+            run: cargo clippy --package driver --target riscv32imac-unknown-none-elf --no-default-features --features mqtt -- -D warnings
           - name: Clippy remote
             run: cargo clippy --package remote --target thumbv7em-none-eabihf -- -D warnings
     steps:
