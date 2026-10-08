@@ -1,0 +1,3 @@
+# Tests only build for the host, see the `test-host` alias.
+[cargo]
+allTargets = false

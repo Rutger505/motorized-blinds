@@ -14,30 +14,39 @@ env:
 
 jobs:
   rust-checks:
-    name: ${{ matrix.name }}
+    name: ${{ matrix.crate }} ${{ matrix.name }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ matrix.crate }}
     strategy:
       fail-fast: false
       matrix:
+        crate: [driver, remote]
+        name: [build, host tests, format, clippy, clippy host]
         include:
-          - name: Build driver
-            run: cargo build-driver --release
-          - name: Build driver with mqtt
-            run: cargo build-driver --release --no-default-features --features mqtt
-          - name: Build remote
-            run: cargo build-remote --release
-          - name: Host tests
+          - name: build
+            run: cargo build --release
+          - name: host tests
             run: cargo test-host
-          - name: Clippy host tests
-            run: cargo clippy --package protocol --package driver --package remote --lib --profile test -- -D warnings
-          - name: Format
-            run: cargo fmt --all -- --check
-          - name: Clippy driver
-            run: cargo clippy --package driver --target riscv32imac-unknown-none-elf -- -D warnings
-          - name: Clippy driver with mqtt
-            run: cargo clippy --package driver --target riscv32imac-unknown-none-elf --no-default-features --features mqtt -- -D warnings
-          - name: Clippy remote
-            run: cargo clippy --package remote --target thumbv7em-none-eabihf -- -D warnings
+          - name: format
+            run: cargo fmt -- --check
+          - name: clippy
+            run: cargo clippy -- -D warnings
+          - name: clippy host
+            run: cargo clippy-host -- -D warnings
+          - crate: driver
+            name: build mqtt
+            run: cargo build --release --no-default-features --features mqtt
+          - crate: driver
+            name: clippy mqtt
+            run: cargo clippy --no-default-features --features mqtt -- -D warnings
+          - crate: protocol
+            name: tests
+            run: cargo test
+          - crate: protocol
+            name: clippy
+            run: cargo clippy --all-targets -- -D warnings
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -49,5 +58,7 @@ jobs:
           components: rust-src, rustfmt, clippy
       - name: Enable caching
         uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.crate }} -> ../target
       - name: Run command
         run: ${{ matrix.run }}

@@ -1,2 +1,13 @@
+[alias]
+clippy-host = "clippy --lib --profile test --target host-tuple"
+test-host   = "test --lib --target host-tuple"
+
 [build]
-target = "thumbv7em-none-eabihf"
+target     = "thumbv7em-none-eabihf"
+target-dir = "../target"
+
+[target.thumbv7em-none-eabihf]
+runner = "probe-rs run --chip nRF52840_xxAA"
+
+[env]
+DEFMT_LOG = "info"

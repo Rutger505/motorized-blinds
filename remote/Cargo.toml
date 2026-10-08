@@ -1,9 +1,11 @@
 [package]
-edition.workspace      = true
-license.workspace      = true
-name                   = "remote"
-rust-version.workspace = true
-version.workspace      = true
+edition      = "2024"
+license      = "MIT"
+name         = "remote"
+rust-version = "1.88"
+version      = "0.1.0"
+
+[workspace]
 
 [[bin]]
 name = "remote"
@@ -15,7 +17,7 @@ test = false
 
 [dependencies]
 heapless = "0.9.3"
-protocol = { workspace = true }
+protocol = { path = "../protocol" }
 
 [target.'cfg(target_os = "none")'.dependencies]
 cortex-m = { version = "0.7.7", features = [
@@ -23,13 +25,14 @@ cortex-m = { version = "0.7.7", features = [
   "inline-asm",
 ] }
 cortex-m-rt = "0.7.5"
-defmt = { workspace = true }
+defmt = "1.0.1"
 defmt-rtt = "1.0.0"
-embassy-executor = { workspace = true, features = [
+embassy-executor = { version = "0.10.0", features = [
+  "defmt",
   "executor-thread",
   "platform-cortex-m",
 ] }
-embassy-futures = { workspace = true }
+embassy-futures = "0.1.2"
 embassy-nrf = { version = "0.11.0", features = [
   "defmt",
   "gpiote",
@@ -38,11 +41,21 @@ embassy-nrf = { version = "0.11.0", features = [
   "time-driver-rtc1",
   "unstable-pac",
 ] }
-embassy-sync = { workspace = true }
-embassy-time = { workspace = true, features = ["defmt-timestamp-uptime"] }
+embassy-sync = { version = "0.8.0", features = ["defmt"] }
+embassy-time = { version = "0.5.0", features = ["defmt", "defmt-timestamp-uptime"] }
 panic-probe = { version = "1.0.0", features = ["print-defmt"] }
-protocol = { workspace = true, features = ["defmt"] }
-static_cell = { workspace = true }
+protocol = { path = "../protocol", features = ["defmt"] }
+static_cell = "2.1.1"
 
 [dev-dependencies]
-embassy-futures = { workspace = true }
+embassy-futures = "0.1.2"
+
+[profile.dev]
+# The default debug profile is too slow and too big for resource-constrained devices.
+opt-level = "s"
+
+[profile.release]
+codegen-units = 1
+debug         = 2
+lto           = "fat"
+opt-level     = "s"

@@ -1,2 +1,23 @@
+[alias]
+clippy-host = "clippy --lib --profile test --target host-tuple"
+test-host   = "test --lib --target host-tuple"
+
 [build]
-target = "riscv32imac-unknown-none-elf"
+target     = "riscv32imac-unknown-none-elf"
+target-dir = "../target"
+
+[target.riscv32imac-unknown-none-elf]
+runner = "probe-rs run --chip=esp32c6 --preverify --always-print-stacktrace --no-location"
+# Required to obtain backtraces, may negatively impact performance
+rustflags = ["-C", "force-frame-pointers"]
+
+# Defaults for the build time settings. Variables already set in the
+# environment take precedence, e.g. `BLIND_ID=2 WIFI_SSID=... cargo run`.
+[env]
+BLIND_ID      = "1"
+DEFMT_LOG     = "info"
+MQTT_BROKER   = "192.168.1.2"
+MQTT_PASSWORD = ""
+MQTT_USERNAME = ""
+WIFI_PASSWORD = ""
+WIFI_SSID     = ""
