@@ -47,6 +47,15 @@ jobs:
           - crate: protocol
             name: clippy
             run: cargo clippy --all-targets -- -D warnings
+          - crate: elf2uf2
+            name: tests
+            run: cargo test
+          - crate: elf2uf2
+            name: clippy
+            run: cargo clippy --all-targets -- -D warnings
+          - crate: remote
+            name: uf2
+            run: cargo uf2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

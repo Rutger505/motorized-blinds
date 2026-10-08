@@ -1,6 +1,13 @@
 [alias]
 clippy-host = "clippy --lib --profile test --target host-tuple"
 test-host   = "test --lib --target host-tuple"
+# Builds remote.uf2 for the UF2 bootloader, and flashes it when the board's drive is mounted.
+uf2 = [
+  "run",
+  "--release",
+  "--config",
+  "target.thumbv7em-none-eabihf.runner = 'cargo run --quiet --release --manifest-path ../elf2uf2/Cargo.toml --target host-tuple --'",
+]
 
 [build]
 target     = "thumbv7em-none-eabihf"

@@ -1,7 +1,7 @@
 # The firmware crates are separate workspaces, each building for its own target.
 [workspace]
 exclude  = ["driver", "remote"]
-members  = ["protocol"]
+members  = ["elf2uf2", "protocol"]
 resolver = "3"
 
 [workspace.package]

@@ -1,0 +1,9 @@
+[package]
+edition.workspace      = true
+license.workspace      = true
+name                   = "elf2uf2"
+rust-version.workspace = true
+version.workspace      = true
+
+[dependencies]
+object = { version = "0.40.0", default-features = false, features = ["elf", "read_core", "std"] }

@@ -7,11 +7,12 @@ Project with 2 esp modules with motor attached to blinds, and a nRF52840 as remo
 `driver` - Contains the code for the ESP modules that control the motors attached to the blinds.
 `remote` - Contains the code for the nRF52840 remote that communicates with the ESP modules to control the blinds.
 `protocol` - The radio frame format and commands, shared by `driver` and `remote`.
+`elf2uf2` - Converts the remote firmware to a UF2 file for drag and drop flashing.
 `case` - Contains the 3D model files for the case that houses the nRF52840 remote and ESP modules.
 
 `driver` and `remote` are separate Cargo workspaces, because each builds for its own chip.
 Their `.cargo/config.toml` sets the target, and all crates share the `target/` directory at the root.
-The root workspace only holds `protocol`.
+The root workspace holds `protocol` and `elf2uf2`.
 
 ## Building
 
@@ -25,7 +26,7 @@ cargo test-host         # unit tests, on this computer
 cargo clippy-host       # lint the unit tests
 ```
 
-`cargo test` at the root tests `protocol`.
+`cargo test` at the root tests `protocol` and `elf2uf2`.
 
 ### Driver settings
 
@@ -52,13 +53,17 @@ cargo build --release --no-default-features --features mqtt
 
 ### Flashing the remote over USB
 
-The Pro Micro nRF52840 has a UF2 bootloader, and `remote/memory.x` places the firmware after it at
-`0x26000`. Without a debug probe, convert the ELF with
-[`uf2conv.py`](https://github.com/microsoft/uf2/blob/master/utils/uf2conv.py) and copy it to the
-drive that appears after double tapping reset. From `remote/`:
+The Pro Micro nRF52840 has a UF2 bootloader: it shows up as a USB drive, and copying a `.uf2`
+file onto it flashes the board. `remote/memory.x` places the firmware after the bootloader at
+`0x26000`. From `remote/`:
 
 ```sh
-uf2conv.py --family 0xADA52840 --convert --output remote.uf2 ../target/thumbv7em-none-eabihf/release/remote
+cargo uf2
 ```
+
+This builds the release firmware and converts it with the `elf2uf2` tool in this repository to
+`target/thumbv7em-none-eabihf/release/remote.uf2`. Double tap reset to get the bootloader drive,
+then drag the file onto it. If the drive is already mounted when you run `cargo uf2`, the file is
+copied onto it right away.
 
 Take the CR2032 out first: the board charges `B+` while USB is connected.
