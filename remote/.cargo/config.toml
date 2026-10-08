@@ -1,20 +1,21 @@
 [alias]
 clippy-host = "clippy --lib --profile test --target host-tuple"
 test-host   = "test --lib --target host-tuple"
-# Builds remote.uf2 for the UF2 bootloader, and flashes it when the board's drive is mounted.
-uf2 = [
+# Flashes through a debug probe instead of the UF2 bootloader.
+probe = [
   "run",
-  "--release",
   "--config",
-  "target.thumbv7em-none-eabihf.runner = 'cargo run --quiet --release --manifest-path ../elf2uf2/Cargo.toml --target host-tuple --'",
+  "target.thumbv7em-none-eabihf.runner = 'probe-rs run --chip nRF52840_xxAA'",
 ]
 
 [build]
 target     = "thumbv7em-none-eabihf"
 target-dir = "../target"
 
+# Writes remote.uf2 next to the firmware, and copies it onto the UF2
+# bootloader drive when that is mounted, which flashes the board.
 [target.thumbv7em-none-eabihf]
-runner = "probe-rs run --chip nRF52840_xxAA"
+runner = "cargo run --quiet --release --manifest-path ../elf2uf2/Cargo.toml --target host-tuple --"
 
 [env]
 DEFMT_LOG = "info"

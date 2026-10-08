@@ -11,6 +11,7 @@ use elf2uf2::{NRF52840_FAMILY, find_bootloader_drive, load_segments, to_uf2};
 fn main() -> ExitCode {
     let Some(elf_path) = env::args_os().nth(1).map(PathBuf::from) else {
         eprintln!("Usage: elf2uf2 <firmware.elf>");
+        eprintln!("To build and flash the remote, run `cargo run --release` inside remote/.");
         return ExitCode::FAILURE;
     };
 

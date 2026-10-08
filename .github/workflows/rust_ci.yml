@@ -55,7 +55,7 @@ jobs:
             run: cargo clippy --all-targets -- -D warnings
           - crate: remote
             name: uf2
-            run: cargo uf2
+            run: cargo run --release
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

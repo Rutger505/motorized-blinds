@@ -21,7 +21,7 @@ Run Cargo inside the crate's directory:
 ```sh
 cd driver   # or remote
 cargo build --release   # firmware for the chip
-cargo run --release     # flash and run through probe-rs
+cargo run --release     # flash: UF2 file for the remote, probe-rs for the driver
 cargo test-host         # unit tests, on this computer
 cargo clippy-host       # lint the unit tests
 ```
@@ -58,12 +58,14 @@ file onto it flashes the board. `remote/memory.x` places the firmware after the 
 `0x26000`. From `remote/`:
 
 ```sh
-cargo uf2
+cargo run --release
 ```
 
 This builds the release firmware and converts it with the `elf2uf2` tool in this repository to
 `target/thumbv7em-none-eabihf/release/remote.uf2`. Double tap reset to get the bootloader drive,
-then drag the file onto it. If the drive is already mounted when you run `cargo uf2`, the file is
+then drag the file onto it. If the drive is already mounted when you run it, the file is
 copied onto it right away.
+
+With a debug probe, `cargo probe --release` flashes through probe-rs instead.
 
 Take the CR2032 out first: the board charges `B+` while USB is connected.
