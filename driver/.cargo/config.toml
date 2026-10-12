@@ -15,7 +15,7 @@ rustflags = ["-C", "force-frame-pointers"]
 # environment take precedence, e.g. `BLIND_ID=2 WIFI_SSID=... cargo run`.
 [env]
 BLIND_ID      = "1"
-DEFMT_LOG     = "info"
+DEFMT_LOG     = "debug"
 MQTT_BROKER   = "192.168.1.2"
 MQTT_PASSWORD = ""
 MQTT_USERNAME = ""
