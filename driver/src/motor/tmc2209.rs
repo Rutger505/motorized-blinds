@@ -129,6 +129,8 @@ mod hardware {
     const REPLY_TIMEOUT: Duration = Duration::from_millis(20);
     /// The TMC2209 waits 8 bit times before replying, plus margin at 115200 baud.
     const REPLY_DELAY: Duration = Duration::from_millis(1);
+    /// About one byte time at 115200 baud.
+    const POLL_INTERVAL: Duration = Duration::from_micros(100);
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, defmt::Format)]
     pub enum Error {
@@ -192,7 +194,10 @@ mod hardware {
             self.transfer(&read_request(register), &mut received)
                 .await?;
             let reply: &[u8; 8] = received[4..].try_into().unwrap();
-            parse_reply(reply, register).ok_or(Error::BadReply)
+            parse_reply(reply, register).ok_or_else(|| {
+                defmt::debug!("TMC2209 bad reply {=[u8]:02x}", reply[..]);
+                Error::BadReply
+            })
         }
 
         /// TX and RX share one wire, so every sent byte is also received
@@ -212,10 +217,41 @@ mod hardware {
                 .map_err(|_| Error::Uart)?;
             self.uart.flush_async().await.map_err(|_| Error::Uart)?;
 
-            with_timeout(REPLY_TIMEOUT, self.uart.read_exact_async(received))
-                .await
-                .map_err(|_| Error::Timeout)?
-                .map_err(|_| Error::Uart)?;
+            let mut count = 0;
+            // Polled, so a reply shorter than the buffer doesn't depend on the
+            // UART's RX timeout interrupt to be noticed.
+            let result = with_timeout(REPLY_TIMEOUT, async {
+                loop {
+                    count += self
+                        .uart
+                        .read_buffered(&mut received[count..])
+                        .map_err(|_| Error::Uart)?;
+                    if count == received.len() {
+                        return Ok(());
+                    }
+                    Timer::after(POLL_INTERVAL).await;
+                }
+            })
+            .await;
+            defmt::debug!(
+                "TMC2209 sent {=[u8]:02x}, received {} of {} bytes {=[u8]:02x}",
+                request,
+                count,
+                received.len(),
+                &received[..count]
+            );
+            match result {
+                Err(_) if count < request.len() => {
+                    defmt::debug!("No echo: TX and RX are not both on the module's RX pin");
+                    return Err(Error::Timeout);
+                }
+                Err(_) => {
+                    defmt::debug!("Echo but no reply: check VM, and MS1 and MS2 on GND");
+                    return Err(Error::Timeout);
+                }
+                Ok(Err(error)) => return Err(error),
+                Ok(Ok(())) => {}
+            }
             Timer::after(REPLY_DELAY).await;
             Ok(())
         }
