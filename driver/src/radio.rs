@@ -38,7 +38,9 @@ mod hardware {
         /// acks by itself.
         pub fn new(mut radio: Ieee802154<'a>, address: u16) -> Self {
             radio.set_config(Config {
-                auto_ack_rx: true,
+                // Sending acks for received frames is the "tx" auto ack;
+                // `auto_ack_rx` waits for acks to frames we send.
+                auto_ack_tx: true,
                 rx_when_idle: true,
                 channel: CHANNEL,
                 pan_id: Some(PAN_ID),
