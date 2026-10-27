@@ -6,7 +6,7 @@
 
 $fa = 2; $fs = 0.4;
 
-part = "assembly";  // "assembly" | "open" | "shell" | "back" | "gear" | "gear_wall" | "gear_hub" | "carriage" | "plate" | "bore_test" | "print"
+part = "assembly";  // "assembly" | "open" | "shell" | "back" | "gear" | "gear_wall" | "gear_back" | "carriage" | "plate" | "bore_test" | "print"
 chain_y  = 20;      // preview only: wall to chain centre
 vert_set = 20;      // preview only: how far the module has been pushed down the rail
 show_wall = true;   // preview only
@@ -82,9 +82,7 @@ bead_clr    = 0.25;
 rope_clr    = 0.2;
 tooth_rise  = 1.2;          // teeth stand this far past the bead centres
 flange_rise = 1.2;          // flange tips past the bead tops
-gear_rim    = 1.0;
-hub_d       = 11;
-hub_l       = 6;
+gear_rim    = 2.0;
 bore_fit    = 0.3;          // printed holes come out small; 0.1 would not go on
 guard_clr   = 1.0;          // flange tips to the guard
 guard_t     = 2;
@@ -93,7 +91,7 @@ dowel_clr   = 0.15;
 dowel_l     = 5;
 
 /* [Mount] */
-chain_min = 15;
+chain_min = 16;
 chain_max = 30;
 plate_t   = 3.5;
 pw        = 20;
@@ -135,15 +133,14 @@ gear_w   = 2*(flank_hw + gear_rim);
 guard_r  = flange_r + guard_clr;
 bore_d   = shaft_d + bore_fit;
 bore_flat = shaft_flat + bore_fit - bore_d/2;     // flat, from the axis
-// At the top of the rope groove neither half has an overhang: the wall half has open
-// bowls and the groove, the hub half only shallow domes over its bed face.
+// Split at the top of the rope groove and printed outer face down, neither half has an
+// overhang: the pockets open upwards as bowls.
 split_z  = gear_w/2 + groove_w/2;
 dowel_r  = (bore_d/2 + groove_r)/2;
 
 shaft_tip = back_t - boss_h - shaft_l;
 gear_y0  = shaft_tip;                       // the gear's wall side face
 gear_c   = gear_y0 + gear_w/2;
-hub_end  = gear_y0 + gear_w + hub_l;
 
 esp_d0   = buck_t + esp_gap;                // ESP component tops
 esp_d1   = esp_d0 + esp_t - esp_pcb;        // PCB front
@@ -205,14 +202,14 @@ cs_depth = (m6_head - m6_d)/2;
 
 yb       = chain_y - gear_c;
 
-echo(str("case ", ow, " x ", oh, " x ", od, ", gear ", 2*flange_r, " x ", gear_w + hub_l));
+echo(str("case ", ow, " x ", oh, " x ", od, ", gear ", 2*flange_r, " x ", gear_w));
 echo(str("chain travel per motor revolution ", pockets*pitch, " mm"));
 
 assert(chain_y >= chain_min && chain_y <= chain_max);
 assert(groove_r <= chord_r - rope_d/2);
 assert(guard_r < tooth_r + bead_d);                 // a bead can't climb over a tooth past the guard
-assert(hub_end <= -1);
-assert(-gear_y0 - (-hub_end) >= 12);                // shaft engagement in the bore
+assert(gear_y0 + gear_w <= -1);
+assert(gear_w >= 10);                               // shaft engagement in the bore
 assert(dowel_r + dowel_d/2 + 1 < pitch_r - pocket_d/2);
 assert(dowel_l/2 + 1 <= gear_w - split_z);
 assert(Fy + 1 <= chain_min - gear_w/2);             // rail stays clear of the gear and guard
@@ -403,20 +400,18 @@ module back() {
 module gear() {
     zc = gear_w/2;
     difference() {
-        union() {
-            rotate_extrude()
-                polygon([[0, 0], [flange_r, 0], [flange_r, zc - flank_hw], [tooth_r, zc - chan_hw],
-                         [tooth_r, zc + chan_hw], [flange_r, zc + flank_hw], [flange_r, gear_w], [0, gear_w]]);
-            translate([0, 0, gear_w - weld]) cylinder(d = hub_d, h = hub_l + weld);
-        }
+        rotate_extrude()
+            polygon([[0, 0], [flange_r, 0], [flange_r, zc - flank_hw], [tooth_r, zc - chan_hw],
+                     [tooth_r, zc + chan_hw], [flange_r, zc + flank_hw], [flange_r, gear_w], [0, gear_w]]);
         for (k = [0:pockets - 1]) rotate(k*360/pockets)
             hull() {
                 translate([pitch_r, 0, zc]) sphere(d = pocket_d);
                 translate([tooth_r + 2, 0, zc]) sphere(d = pocket_d);
             }
         rotate_extrude() translate([groove_r, zc - groove_w/2]) square([tooth_r + 1 - groove_r, groove_w]);
-        translate([0, 0, -1]) d_bore(gear_w + hub_l + 2);
-        for (z = [-0.01, split_z - 0.01]) translate([0, 0, z]) cylinder(d1 = bore_d + 1, d2 = bore_d, h = 0.5);
+        translate([0, 0, -1]) d_bore(gear_w + 2);
+        translate([0, 0, -0.01]) cylinder(d1 = bore_d + 1, d2 = bore_d, h = 0.5);
+        translate([0, 0, gear_w - 0.49]) cylinder(d1 = bore_d, d2 = bore_d + 1, h = 0.5);
         // asymmetric, so the halves only go together with the bore flats lined up
         for (a = [half_a, 180 - half_a]) rotate(a)
             translate([dowel_r, 0, split_z - dowel_l/2 - 0.5]) cylinder(d = dowel_d + 2*dowel_clr, h = dowel_l + 1);
@@ -424,16 +419,17 @@ module gear() {
 }
 
 module gear_wall_half() intersection() { gear(); translate([-50, -50, -1]) cube([100, 100, split_z + 1]); }
-module gear_hub_half()  translate([0, 0, -split_z]) intersection() { gear(); translate([-50, -50, split_z]) cube([100, 100, 50]); }
+module gear_back_half() translate([0, 0, gear_w]) rotate([180, 0, 0])
+    intersection() { gear(); translate([-50, -50, split_z]) cube([100, 100, 50]); }
 
 module gear_halves() {
     gear_wall_half();
-    translate([2*flange_r + 5, 0, 0]) gear_hub_half();
+    translate([2*flange_r + 5, 0, 0]) gear_back_half();
 }
 
 module bore_test()
     difference() {
-        cylinder(d = hub_d, h = 6);
+        cylinder(d = bore_d + 6, h = 6);
         translate([0, 0, -1]) d_bore(8);
     }
 
@@ -584,7 +580,7 @@ else if (part == "shell")     shell_print();
 else if (part == "back")      back_print();
 else if (part == "gear")      gear_halves();
 else if (part == "gear_wall") gear_wall_half();
-else if (part == "gear_hub")  gear_hub_half();
+else if (part == "gear_back") gear_back_half();
 else if (part == "carriage")  carriage();
 else if (part == "plate")     plate_print();
 else if (part == "bore_test") bore_test();
