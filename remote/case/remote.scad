@@ -40,6 +40,7 @@ col_pitch = 20;
 row_pitch = 11;
 cal_pitch = 15;     // calibration row to up row, so calibration stands apart
 btn_clr   = 0.1;
+btn_hole_clr = 0.15;   // widened after printing; btn_clr still sets the layout so the plate fits the printed tray and lid
 plate_t   = 1.2;
 plate_lip = 1.2;    // plate reaches past the posts, so the peg holes keep a wall
 pkt_drop  = 0.3;    // pocket walls and ribs stay clear of the lid; only the button tops touch it
@@ -80,8 +81,8 @@ boss_hang = [true, true, false, false];  // front left, front right, rear left, 
 leg_below = btn_leg - plate_t;
 cav_h = board.z + clr_mod + board_wire_h + btn_leg + btn.z;
 
-btn_po = btn.x + 2*btn_clr;
-pkt_ow = btn_po + 2*rib;
+btn_po = btn.x + 2*btn_hole_clr;
+pkt_ow = btn.x + 2*btn_clr + 2*rib;
 pkt_h  = btn.z - pkt_drop;
 slot_l = btn.y + 0.6;
 
