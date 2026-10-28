@@ -69,7 +69,7 @@ pub use hardware::{Battery, Hfxo, Led, NrfLink};
 mod hardware {
     use embassy_nrf::gpio::Output;
     use embassy_nrf::pac;
-    use embassy_nrf::radio::ieee802154::{Packet, Radio};
+    use embassy_nrf::radio::ieee802154::{Packet, Radio, RadioState};
     use embassy_nrf::saadc::Saadc;
     use embassy_time::{Duration, Timer, with_timeout};
     use protocol::{CHANNEL, mac};
@@ -120,11 +120,20 @@ mod hardware {
                     false
                 }
             };
+            disable_radio();
             if !acked {
                 Timer::after(RETRY_DELAY).await;
             }
             acked
         }
+    }
+
+    /// embassy leaves the radio in RXIDLE after a receive, even a cancelled
+    /// one. The receiver then stays powered at around 10 mA.
+    fn disable_radio() {
+        let radio = pac::RADIO;
+        radio.tasks_disable().write_value(1);
+        while radio.state().read().state() != RadioState::Disabled {}
     }
 
     /// The radio needs the external 32 MHz crystal, which draws far too much
