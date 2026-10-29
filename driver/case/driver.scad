@@ -67,7 +67,6 @@ slot     = 1.0;
 esp_gap    = 1;             // ESP components to the buck below
 wire_bend  = 6;             // behind the DuPont housings before a wire has to turn
 tmc_gap    = 1;             // heat sink off the front wall
-mot_squeeze = 0.1;          // the pads push the motor onto the back plate
 cable_zone = 16;
 sr_pin_d   = 3;
 sr_bite    = 1.0;           // each strain relief pin pushes the cable this far off a straight line
@@ -151,7 +150,6 @@ tmc_d1   = tmc_d0 + tmc_pcb;
 id       = max(mot_l + 0.4, esp_d2 + esp_pins + wire_bend);
 front_in = back_t + id;
 od       = front_in + front_t;
-mot_pad  = id - mot_l + mot_squeeze;
 
 tmc_bay  = tmc_w + 2*fit + 2;
 iw       = max(mot_w + 2*fit + rib + tmc_bay, esp_l + 2*(fit + hook_t + 1));
@@ -286,10 +284,6 @@ module motor_ribs() {
         box(seg[0], seg[1], y0, y1, mot_z0 - fit - rib, mot_z0 - fit);
 }
 
-module motor_pads()
-    for (x = [mot_x0 + 5, mot_x1 - 10], z = [mot_z0 + 5, mot_z0 + mot_w - 10])
-        box(x, x + 5, yd(mot_pad), yd(-weld), z, z + 5);
-
 // clips on the short edges, between the two pin rows
 module tmc_clips()
     for (sz = [-1, 1])
@@ -347,7 +341,6 @@ module shell() {
     }
     tab_ridges();
     motor_ribs();
-    motor_pads();
     tmc_clips();
     esp_cradle();
     buck_ribs();

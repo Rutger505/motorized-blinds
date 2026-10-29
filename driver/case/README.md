@@ -75,7 +75,7 @@ strands go up.
   `carriage` and `plate` (the wall plate).
 - The back plate snaps into the shell. To open the case, take the whole module off the rail and pull
   the back plate off at the table.
-- The motor is clamped between pads on the shell's front wall and the back plate. Its boss sits in a
+- The motor sits between the shell's front wall and the back plate, with about 0.4 mm of play. Its boss sits in a
   hole in the back plate, so the chain pull goes straight into the back plate.
 - The ESP clips out (the DuPont wires stay on). It's flashed outside the case. Its antenna end goes
   under a fixed lip, and the USB end snaps under two flexible hooks.
