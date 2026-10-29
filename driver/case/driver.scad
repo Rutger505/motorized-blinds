@@ -55,6 +55,10 @@ corner_r = 4;
 fit      = 0.2;
 rib      = 1.2;
 weld     = 0.5;
+rib_low  = 8;               // motor ribs between the posts
+post_t   = 2.4;
+post_l   = 6;
+post_flare = 3;
 rim_t    = 1.0;
 lid_clr  = 0.1;
 boss_clr = 0.5;             // the motor boss hole printed tight with just fit
@@ -82,7 +86,7 @@ rope_clr    = 0.2;
 tooth_rise  = 1.2;          // teeth stand this far past the bead centres
 flange_rise = 1.2;          // flange tips past the bead tops
 gear_rim    = 2.0;
-bore_fit    = 0.2;         // printed holes come out small; 0.1 would not go on
+bore_fit    = 0.3;          // printed holes come out small; 0.1 would not go on
 guard_clr   = 1.0;          // flange tips to the guard
 guard_t     = 2;
 dowel_d     = 1.75;         // a piece of filament aligns the two glued halves
@@ -106,6 +110,7 @@ tooth_h   = 1.0;
 car_h     = 30;
 car_t     = 3;
 car_slide = 0.3;            // sleeve off the plate face
+lock_clr  = 0.1;            // carriage around the rail and beams; fit left it loose
 pawl_w    = 6;
 lever_l   = 10;
 beam_w    = 10;
@@ -179,11 +184,11 @@ bp_hw    = ow/2 - rim_t - lid_clr;
 
 // mount
 Fy       = plate_t + rail_d;                // rail front
-S        = Fy + fit;                        // sleeve front wall, inside
+S        = Fy + lock_clr;                   // sleeve front wall, inside
 sleeve_y1 = S + car_t;
-tun_z    = tun_t + fit;                     // beam bottom, carriage frame
+tun_z    = tun_t + lock_clr;                // beam bottom, carriage frame
 car_z0   = beam_z0 - tun_z;                 // carriage bottom, case frame
-Wi       = beam_x + beam_w/2 + fit;         // ratchet tunnel, outer wall
+Wi       = beam_x + beam_w/2 + lock_clr;    // ratchet tunnel, outer wall
 Wo       = Wi + tun_t;
 yb_min   = chain_min - gear_c;              // wall to back plate face
 yb_max   = chain_max - gear_c;
@@ -275,13 +280,33 @@ module tab_ridges()
             polygon([[sx*weld, back_t/2 - ridge], [0, back_t/2 - ridge], [-sx*ridge, back_t/2],
                      [0, back_t/2 + ridge], [sx*weld, back_t/2 + ridge]]);
 
-// The left and top walls hold two sides; the plug leaves through the gap in the bottom rib.
-module motor_ribs() {
+// The flare widens the root, where the motor levers on a post.
+module motor_post(x0, x1, z0, z1, dx, dz) {
     y0 = back_t + 1;
     y1 = front_in + weld;
-    box(mot_x1 + fit, mot_x1 + fit + rib, y0, y1, mot_z0 + mot_ch, mot_z0 + mot_w - mot_ch);
-    for (seg = [[mot_x0 + mot_ch, mot_cx - plug_w/2 - 2], [mot_cx + plug_w/2 + 2, mot_x1 + fit + rib]])
-        box(seg[0], seg[1], y0, y1, mot_z0 - fit - rib, mot_z0 - fit);
+    hull() {
+        box(x0, x1, y0, y1, z0, z1);
+        box(min(x0, x0 + dx*post_flare), max(x1, x1 + dx*post_flare), y1 - post_flare, y1,
+            min(z0, z0 + dz*post_flare), max(z1, z1 + dz*post_flare));
+    }
+}
+
+// The left and top walls hold two sides; the plug leaves through the gap in the bottom rib.
+// Full height walls snapped off, so only the posts at the ends stand tall.
+module motor_ribs() {
+    y0 = front_in + weld - rib_low;
+    y1 = front_in + weld;
+    xr = mot_x1 + fit;
+    zb = mot_z0 - fit;
+    ztop = mot_z0 + mot_w - mot_ch;
+    xl = mot_x0 + mot_ch;
+    box(xr, xr + rib, y0, y1, mot_z0 + mot_ch, ztop);
+    for (seg = [[xl, mot_cx - plug_w/2 - 2], [mot_cx + plug_w/2 + 2, xr + rib]])
+        box(seg[0], seg[1], y0, y1, zb - rib, zb);
+    motor_post(xr, xr + post_t, ztop - post_l, ztop, 1, 0);
+    motor_post(xr, xr + post_t, zb - post_t, zb + post_l, 1, 0);
+    motor_post(xr + post_t - post_l, xr + post_t, zb - post_t, zb, 0, -1);
+    motor_post(xl, xl + post_l, zb - post_t, zb, 0, -1);
 }
 
 // clips on the short edges, between the two pin rows
@@ -437,11 +462,11 @@ module carriage() {
     difference() {
         union() {
             box(-beam_x, beam_x, plate_t + car_slide, sleeve_y1, 0, car_h);
-            for (s = [-1, 1]) tunnel(s, fit + tun_t, tun_y0, tun_y1);
+            for (s = [-1, 1]) tunnel(s, lock_clr + tun_t, tun_y0, tun_y1);
         }
-        translate([0, 0, -1]) linear_extrude(car_h + 2) offset(delta = fit) rail_2d();
-        box(-rail_w[0]/2 - fit, rail_w[0]/2 + fit, plate_t - 1, plate_t + car_slide + 0.1, -1, car_h + 1);
-        for (s = [-1, 1]) tunnel(s, fit, tun_y0 - 1, tun_y1 + 1);
+        translate([0, 0, -1]) linear_extrude(car_h + 2) offset(delta = lock_clr) rail_2d();
+        box(-rail_w[0]/2 - lock_clr, rail_w[0]/2 + lock_clr, plate_t - 1, plate_t + car_slide + 0.1, -1, car_h + 1);
+        for (s = [-1, 1]) tunnel(s, lock_clr, tun_y0 - 1, tun_y1 + 1);
         for (sx = [-1, 1])
             box(min(sx*pawl_w/2, sx*(pawl_w/2 + slot)), max(sx*pawl_w/2, sx*(pawl_w/2 + slot)),
                 S - 1, sleeve_y1 + 1, -1, arm_top);
@@ -455,7 +480,7 @@ module carriage() {
 
 // locks against the module moving up; pull the lever towards the room to lift it
 module vertical_pawl() {
-    d = tooth_h + fit - 0.2;
+    d = tooth_h + lock_clr - 0.2;
     yz(-pawl_w/2, pawl_w) polygon([[S + weld, pawl_zt], [S - d, pawl_zt], [S + weld, pawl_zt - d - weld]]);
     box(-pawl_w/2, pawl_w/2, sleeve_y1 - weld, sleeve_y1 + lever_l, 0, 3);
     box(-pawl_w/2, pawl_w/2, sleeve_y1 + lever_l - 2, sleeve_y1 + lever_l, 0, 7);
@@ -463,7 +488,7 @@ module vertical_pawl() {
 
 // The lever's underside rises at 45 degrees and stays clear of the wall above the slot.
 module depth_pawl() {
-    d = tooth_h + fit - 0.2;
+    d = tooth_h + lock_clr - 0.2;
     translate([0, 0, arm_z[0]]) linear_extrude(arm_z[1] - arm_z[0])
         polygon([[Wi + weld, pawl_y], [Wi - d, pawl_y], [Wi + weld, pawl_y + d + 0.6]]);
     hull() {
