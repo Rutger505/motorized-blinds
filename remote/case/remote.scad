@@ -6,10 +6,14 @@ $fa = 2; $fs = 0.4;
 part = "assembly";      // "assembly" | "open" | "tray" | "lid" | "plate" | "print"
 
 /* [Measured components] */
-board  = [17.5, 33.2, 3.3];     // Pro Micro nRF52840, components up, long side along Y
+board  = [17.5, 33.2, 3.3];     // Pro Micro nRF52840, components up; mounted turned, long side along X
 board_wire_h = 5;               // wires soldered on top, joints cut flush underneath
 board_rib_h  = 2.0;
-holder = [22.8, 18.3, 6.3];     // CR2032 holder
+holder = [22.8, 18.3, 6.3];     // CR2032 holder, empty; the cell sticks out of the open front end
+hold_pkt = [23.3, 24.3];        // holder pocket, print clearance included; length is with a cell in it
+hold_brick = 13;                // the holder's back ends in a block this wide, centred, with the pins
+gnd_slot   = 3;                 // slot in the back wall for the single ground pin at the bottom
+pin_drop   = 3;                 // back wall this much lower than the holder, so the other pins clear it
 cap    = [5, 5, 5];             // 100 uF, loose next to the holder
 cap_leg = 5;
 btn   = [5.9, 5.9, 3.3];        // base to flat top
@@ -65,7 +69,6 @@ clip_lip  = 0.5;
 clip_lead = 0.8;
 clip_slot = 0.6;
 clip_root = 1.5;    // the slots stop this far above the floor, so the clip flexes as one finger
-hold_gap  = 10;     // opening in the rib towards the board, for the wires and a fingertip
 
 /* [Fasteners] */
 scr_pilot = 1.7;    // M2 self-tapping
@@ -76,6 +79,8 @@ boss_dia_s = 4.4;   // slimmer where they hang over the battery bay
 boss_in   = corner_r - 0.5;     // centre from the outside faces, as close as the countersink allows
 boss_deep = 7;
 boss_hang = [true, true, false, false];  // front left, front right, rear left, rear right
+boss_reach   = boss_in - wall + boss_dia/2;     // from the inner wall
+boss_reach_s = boss_in - wall + boss_dia_s/2;
 
 // ---------------------------------------------------------------- derived
 leg_below = btn_leg - plate_t;
@@ -94,23 +99,28 @@ out_w   = 2*(col_pitch/2 + lab_dx + lab_size/2 + lab_edge);
 inner_w = out_w - 2*wall;
 col_x   = [inner_w/2 - col_pitch/2, inner_w/2 + col_pitch/2];
 
-hold_pkt   = [holder.x + 2*fit, holder.y + 2*fit];
+// The battery and the board both sit under the button plate: battery at the front,
+// the board turned crosswise behind it.
 hold_x     = (inner_w - hold_pkt.x)/2;
 hold_lip_z = holder.z + fit;
 hold_rib_h = hold_lip_z + clip_lip + clip_lead;
+hold_low_h = holder.z - pin_drop;    // the back wall, and the side ribs away from the clips
 b1_d       = hold_pkt.y + rib;
 
-post_y0  = b1_d;
-plate_y0 = post_y0 - plate_lip;
+plate_y0 = boss_reach_s + fit;       // clear of the front bosses
+post_y0  = plate_y0 + plate_lip;
 down_y   = plate_y0 + rib + pkt_ow/2;
 cal_y    = down_y + row_dy[3];
 row_y    = [for (dy = row_dy) cal_y - dy];
 plate_y1 = cal_y + pkt_ow/2 + rib;
 post_y   = [post_y0, plate_y1 - plate_lip - post_t];
 
-b2_y = post_y[0] + post_t;
-b2_d = post_y[1] - b2_y;
-board_pos = [(inner_w - board.x)/2, b2_y + (b2_d - board.y)/2];
+// the clips sit between the down and custom rows, clear of the button legs and their wires
+clip_y = (row_y[3] + row_y[2])/2;
+
+board_fp  = [board.y, board.x];
+board_bay = post_y[1] - b1_d;        // battery back wall to the rear posts
+board_pos = [(inner_w - board_fp.x)/2, b1_d + (board_bay - board_fp.y)/2];
 
 pil_top = cav_h - btn.z - plate_t;
 peg_xy  = [for (x = [brk_len/2, inner_w - brk_len/2], y = post_y) [x, y + post_t/2]];
@@ -118,7 +128,6 @@ plate_x0 = 0.3;          plate_x1 = inner_w - 0.3;
 plate_rib_x = [col_x[0] - pkt_ow/2 - rib, col_x[1] + pkt_ow/2 + rib];
 
 num_y = cal_y + dish_d/2 + lab_gap + num_size/2;
-boss_reach = boss_in - wall + boss_dia/2;     // from the inner wall
 inner_l = max(plate_y1 + fit + boss_reach, num_y + num_size/2 + lab_edge - wall);
 
 out_l  = inner_l + 2*wall;
@@ -142,8 +151,13 @@ boss_drop = sqrt(2)*boss_in + boss_dia_s/2;
 
 echo(str("body ", out_w, " x ", out_l, " x ", out_h));
 
-assert(b2_d >= board.y + 2*fit + 2*rib);
-assert(board_pos.x - fit - rib >= brk_len);
+assert(board_bay >= board_fp.y + 2*fit + 2*rib);
+assert(board_pos.x - fit - rib >= 0);
+assert(hold_x - rib >= brk_len);                      // battery ribs clear the front posts
+assert(hold_brick <= hold_pkt.x && gnd_slot < hold_brick);
+assert(clip_y - clip_w/2 - clip_slot >= row_y[3] + 1.5);
+assert(clip_y + clip_w/2 + clip_slot <= row_y[2] - 1.5);
+assert(clip_y + clip_w/2 + clip_slot <= hold_pkt.y);
 assert(pil_top >= board.z + clr_mod + leg_below);
 assert(plate_rib_x[0] >= peg_xy[0].x + peg_hole/2 + 0.4);
 assert(hold_x - rib >= cap.x + 2*fit);
@@ -194,7 +208,7 @@ module boss(p, d, hang) {
 // only at the corners, so wires can leave the pin rows sideways
 module board_brackets() {
     x0 = board_pos.x - fit; y0 = board_pos.y - fit;
-    w = board.x + 2*fit;    d = board.y + 2*fit;
+    w = board_fp.x + 2*fit; d = board_fp.y + 2*fit;
     h = board_rib_h + weld;
     for (x = [x0 - rib, x0 + w], y = [y0 - rib, y0 + d + rib - brk_len])
         at(x, y, -weld) cube([rib, brk_len, h]);
@@ -215,21 +229,24 @@ module clip_lip_2d()
              [0, hold_rib_h], [-weld, hold_rib_h]]);
 
 // The holder lifts out on its wires to swap the cell; the clips only keep it from rattling.
-// The front wall of the case is the front of the pocket.
+// The front wall of the case is the front of the pocket, the cell's open end faces it.
+// The pins point back: the ground pin drops into the centre slot, the others pass over the
+// lowered back wall.
 module holder_pocket() {
     x0 = hold_x; x1 = hold_x + hold_pkt.x;
-    clip_y = hold_pkt.y/2;
     difference() {
         union() {
-            for (x = [x0 - rib, x1])
-                at(x, -weld, -weld) cube([rib, b1_d + weld, hold_rib_h + weld]);
-            for (x = [x0 - rib, x1 + rib - (hold_pkt.x - hold_gap)/2 - rib])
-                at(x, hold_pkt.y, -weld)
-                    cube([(hold_pkt.x - hold_gap)/2 + rib, rib, holder.z + weld]);
+            for (x = [x0 - rib, x1]) {
+                at(x, -weld, -weld) cube([rib, b1_d + weld, hold_low_h + weld]);
+                at(x, clip_y - clip_w/2 - clip_slot, -weld)
+                    cube([rib, clip_w + 2*clip_slot, hold_rib_h + weld]);
+            }
+            at(x0 - rib, hold_pkt.y, -weld) cube([hold_pkt.x + 2*rib, rib, hold_low_h + weld]);
         }
         for (x = [x0 - rib, x1], s = [-1, 1])
             at(x - 1, clip_y + s*(clip_w + clip_slot)/2 - clip_slot/2, clip_root)
                 cube([rib + 2, clip_slot, hold_rib_h]);
+        at(inner_w/2 - gnd_slot/2, hold_pkt.y - 1, 0) cube([gnd_slot, rib + 2, holder.z]);
     }
     at(x0, clip_y + clip_w/2) rotate([90, 0, 0]) linear_extrude(height = clip_w) clip_lip_2d();
     at(x1, clip_y + clip_w/2) mirror([1, 0, 0]) rotate([90, 0, 0])
@@ -367,10 +384,12 @@ module button_mock() {
 }
 
 module mock() {
-    %at(board_pos.x, board_pos.y) cube(board);
-    %at(hold_x + fit, fit) union() {
-        cube(holder);
-        translate([holder.x/2, holder.y/2, holder.z/2]) cylinder(d = 20, h = 3.2, center = true);
+    %at(board_pos.x, board_pos.y) cube([board_fp.x, board_fp.y, board.z]);
+    %at(hold_x + fit, hold_pkt.y - fit - holder.y) union() {
+        cube([hold_pkt.x - 2*fit, holder.y - 3, holder.z]);
+        translate([(hold_pkt.x - 2*fit - hold_brick)/2, 0, 0]) cube([hold_brick, holder.y, holder.z]);
+        translate([(hold_pkt.x - 2*fit)/2, holder.y - (hold_pkt.y - 2*fit) + 10, holder.z/2])
+            cylinder(d = 20, h = 3.2, center = true);
     }
     %at(fit, hold_pkt.y - cap.y) union() {
         cube(cap);

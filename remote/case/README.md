@@ -62,9 +62,16 @@ each corner nub takes:
 
 ### CR2032 holder
 
-22.8mm x 18.3mm x 6.3mm
+22.8mm x 18.3mm x 6.3mm (empty)
 
-At the end of the 18.3mm is the opening for the battery.
+At the end of the 18.3mm is the opening for the battery. With a cell in it the length grows to
+about 24mm.
+
+Pocket, print clearance included: 23.3mm wide, 24.3mm long.
+
+The back of the holder ends in a 13mm wide block, centred, with the pins. A single ground pin sits at
+the bottom: the back wall has a 3mm slot in the centre for it, and is 3mm lower than the holder so
+the other pins clear it.
 
 ### Capacitor (100 µF)
 
