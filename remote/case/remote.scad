@@ -9,8 +9,11 @@ part = "assembly";      // [assembly, open, tray, lid, plate, print, print_no_bu
 board  = [17.5, 33.2, 3.3];     // Pro Micro nRF52840, components up; mounted turned, long side along X
 board_wire_h = 5;               // wires soldered on top, joints cut flush underneath
 board_rib_h  = 2.0;
-holder = [22.8, 18.3, 6.3];     // CR2032 holder, empty; the cell sticks out of the open front end
-hold_pkt = [23.3, 24.3];        // holder pocket, print clearance included; length is with a cell in it
+holder = [22.7, 24.1, 6.1];     // CR2032 holder with a cell in it; the cell sticks out of the open front end
+holder_empty_l = 18.3;
+holder_tab_h   = 6.3;           // the cell's contact tab, centred on top
+hold_clr = [0.5, 0.3];          // total print clearance in the pocket, width and length
+hold_pkt = [holder.x + hold_clr.x, holder.y + hold_clr.y];
 hold_brick = 13;                // the holder's back ends in a block this wide, centred, with the pins
 gnd_slot   = 3;                 // slot in the back wall for the single ground pin at the bottom
 pin_drop   = 3;                 // back wall this much lower than the holder, so the other pins clear it
@@ -102,7 +105,7 @@ col_x   = [inner_w/2 - col_pitch/2, inner_w/2 + col_pitch/2];
 // The battery and the board both sit under the button plate: battery at the front,
 // the board turned crosswise behind it.
 hold_x     = (inner_w - hold_pkt.x)/2;
-hold_lip_z = holder.z + fit;
+hold_lip_z = holder.z + fit;         // the lips hold the body's edges, the tab sits between them
 hold_rib_h = hold_lip_z + clip_lip + clip_lead;
 hold_low_h = holder.z - pin_drop;    // the back wall, and the side ribs away from the clips
 b1_d       = hold_pkt.y + rib;
@@ -385,11 +388,12 @@ module button_mock() {
 
 module mock() {
     %at(board_pos.x, board_pos.y) cube([board_fp.x, board_fp.y, board.z]);
-    %at(hold_x + fit, hold_pkt.y - fit - holder.y) union() {
-        cube([hold_pkt.x - 2*fit, holder.y - 3, holder.z]);
-        translate([(hold_pkt.x - 2*fit - hold_brick)/2, 0, 0]) cube([hold_brick, holder.y, holder.z]);
-        translate([(hold_pkt.x - 2*fit)/2, holder.y - (hold_pkt.y - 2*fit) + 10, holder.z/2])
-            cylinder(d = 20, h = 3.2, center = true);
+    %at(hold_x + hold_clr.x/2, hold_clr.y) union() {
+        translate([0, holder.y - holder_empty_l, 0]) cube([holder.x, holder_empty_l - 3, holder.z]);
+        translate([(holder.x - hold_brick)/2, holder.y - holder_empty_l, 0])
+            cube([hold_brick, holder_empty_l, holder.z]);
+        translate([holder.x/2 - 2, holder.y - holder_empty_l, 0]) cube([4, holder_empty_l - 3, holder_tab_h]);
+        translate([holder.x/2, 10, holder.z/2]) cylinder(d = 20, h = 3.2, center = true);
     }
     %at(fit, hold_pkt.y - cap.y) union() {
         cube(cap);
