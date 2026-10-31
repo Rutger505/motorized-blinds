@@ -3,7 +3,7 @@
 
 $fa = 2; $fs = 0.4;
 
-part = "assembly";      // [assembly, open, tray, lid, plate, print]
+part = "assembly";      // [assembly, open, tray, lid, plate, print, print_no_button_plate]
 
 /* [Measured components] */
 board  = [17.5, 33.2, 3.3];     // Pro Micro nRF52840, components up; mounted turned, long side along X
@@ -404,8 +404,8 @@ else if (part == "open") { tray(); plate(); mock(); }
 else if (part == "tray")  tray();
 else if (part == "plate") plate_print();
 else if (part == "lid")   lid_print();
-else if (part == "print") {
+else if (part == "print" || part == "print_no_button_plate") {
     tray();
     translate([out_w + 10, 0, 0]) lid_print();
-    translate([2*out_w + 20, 0, 0]) plate_print();
+    if (part == "print") translate([2*out_w + 20, 0, 0]) plate_print();
 }
