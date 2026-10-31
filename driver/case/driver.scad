@@ -6,7 +6,7 @@
 
 $fa = 2; $fs = 0.4;
 
-part = "assembly";  // "assembly" | "open" | "shell" | "back" | "gear" | "gear_wall" | "gear_back" | "carriage" | "plate" | "bore_test" | "print"
+part = "assembly";  // [assembly, open, shell, back, gear, gear_wall, gear_back, carriage, plate, bore_test, print]
 chain_y  = 20;      // preview only: wall to chain centre
 vert_set = 20;      // preview only: how far the module has been pushed down the rail
 show_wall = true;   // preview only

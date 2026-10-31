@@ -3,7 +3,7 @@
 
 $fa = 2; $fs = 0.4;
 
-part = "assembly";      // "assembly" | "open" | "tray" | "lid" | "plate" | "print"
+part = "assembly";      // [assembly, open, tray, lid, plate, print]
 
 /* [Measured components] */
 board  = [17.5, 33.2, 3.3];     // Pro Micro nRF52840, components up; mounted turned, long side along X
